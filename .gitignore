@@ -1,0 +1,27 @@
+# Python virtual environment & cache
+venv/
+.env
+__pycache__/
+*.py[cod]
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# PostgreSQL data & dumps
+*.dump
+*.tar
+*.sql.gz
+pg_data/
+
+# Large raw datasets (>50-100 MB)
+data/
+*.csv
+*.xlsx
+*.parquet
+
+# Operating System files
+.DS_Store
+Thumbs.db
