@@ -1,0 +1,20 @@
+name: BigData_project
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg16_check
+
+    environment:
+      POSTGRES_USER: ultima
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: Landing_Club
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
