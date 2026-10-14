@@ -3,7 +3,7 @@ name: BigData_project
 services:
   postgres:
     image: postgres:16
-    container_name: pg16_check
+    container_name: BDProject
 
     environment:
       POSTGRES_USER: ultima
