@@ -1,27 +1,26 @@
-name: BigData_project
+name: bigdata_project
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: bigdata_postgres
     restart: unless-stopped
-
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: ultima
-      POSTGRES_PASSWORD: ultima_dev_pw    
-      POSTGRES_DB: landing_club           
-
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"
-
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ultima -d landing_club"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
   postgres_data:
+    driver: local
