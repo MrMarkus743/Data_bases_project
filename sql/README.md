@@ -36,7 +36,7 @@ cp .env.example .env
 | Параметр | Значение |
 |---|---|
 | Переменная в `.env`   | `POSTGRES_DB` |
-| Значение по умолчанию | `landing_club` |
+| Значение по умолчанию | `lending_club` |
 
 ## 3. Пользователь и пароль по умолчанию
 
@@ -46,12 +46,12 @@ cp .env.example .env
 | Пароль       | `POSTGRES_PASSWORD` | `ultima_dev_pw` |
 | Хост         | —                   | `localhost` |
 | Порт         | `POSTGRES_PORT`     | `5433` |
-| База данных  | `POSTGRES_DB`       | `landing_club` |
+| База данных  | `POSTGRES_DB`       | `lending_club` |
 
 Строка подключения:
 
 ```
-postgresql://ultima:ultima_dev_pw@localhost:5433/landing_club
+postgresql://ultima:ultima_dev_pw@localhost:5433/lending_club
 ```
 
 ## 4. Команды запуска и остановки
@@ -93,7 +93,7 @@ docker compose down -v
 ### Подключение через psql внутри контейнера
 
 ```bash
-docker exec -it bigdata_postgres psql -U ultima -d landing_club
+docker exec -it bigdata_postgres psql -U ultima -d lending_club
 ```
 
 ### Просмотр логов
@@ -123,7 +123,7 @@ docker compose ps
 |---|---|
 | **Host**     | `localhost` |
 | **Port**     | `5433` |
-| **Database** | `landing_club` |
+| **Database** | `lending_club` |
 | **Username** | `ultima` |
 | **Password** | `ultima_dev_pw` |
 
