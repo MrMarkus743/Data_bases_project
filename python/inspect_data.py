@@ -11,6 +11,7 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, 'columns_raw.md')
 
 # Константы параметров обработки
 CHUNK_SIZE = 100_000
+# Порог категорий: вмещает справочники/шкалы (до 500), отсекает ID/текст и бережёт RAM
 CARDINALITY_LIMIT = 500
 
 
@@ -50,13 +51,21 @@ def collect_column_stats(
         total_rows += len(chunk)
         print(f'Обработано строк: {total_rows:,}...', end='\r')
 
-        # Инициализация словарей на первом чанке
-        if not dtypes:
+        # 1. Инициализация словарей строго на первом чанке
+        if not non_null_counts:
             for col in chunk.columns:
-                dtypes[col] = str(chunk[col].dtype)
                 non_null_counts[col] = 0
                 unique_sets[col] = set()
                 first_samples[col] = None
+
+        # 2. Определение и расширение типов данных (проверяем каждый чанк)
+        for col in chunk.columns:
+            if chunk[col].notna().any():
+                cur_dtype = str(chunk[col].dtype)
+                if (col not in dtypes
+                        or cur_dtype == 'object'
+                        or (cur_dtype.startswith('float') and dtypes[col].startswith('int'))):
+                    dtypes[col] = cur_dtype
 
         for col in chunk.columns:
             # Подсчет непустых ячеек
@@ -76,6 +85,11 @@ def collect_column_stats(
                     unique_sets[col].clear()
 
     print()
+
+    # Подстраховка для колонок, которые во всем датасете были полностью пустыми
+    for col in non_null_counts:
+        dtypes.setdefault(col, 'float64')
+
     stats = {
         'dtypes': dtypes,
         'non_null_counts': non_null_counts,
