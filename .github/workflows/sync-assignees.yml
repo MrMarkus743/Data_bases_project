@@ -1,0 +1,37 @@
+name: Sync Assignees to PR
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: read
+    steps:
+      - name: Copy assignees from linked issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          ISSUE_NUM=$(echo "$PR_BODY" | grep -ioE "(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved) #[0-9]+" | head -n 1 | grep -oE "[0-9]+")
+
+          if [ -n "$ISSUE_NUM" ]; then
+            echo "Найдена связанная задача: #$ISSUE_NUM"
+            ASSIGNEES=$(gh issue view "$ISSUE_NUM" --json assignees -q '.assignees[].login' | tr '\n' ',' | sed 's/,$//')
+
+            if [ -n "$ASSIGNEES" ]; then
+              echo "Назначаем исполнителей: $ASSIGNEES"
+              gh pr edit "$PR_NUM" --add-assignee "$ASSIGNEES"
+            else
+              echo "В задаче не было исполнителей, назначаем автора PR: $ACTOR"
+              gh pr edit "$PR_NUM" --add-assignee "$ACTOR"
+            fi
+          else
+            echo "Связанная задача не указана, назначаем автора PR: $ACTOR"
+            gh pr edit "$PR_NUM" --add-assignee "$ACTOR"
+          fi
