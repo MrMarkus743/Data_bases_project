@@ -1,0 +1,28 @@
+name: Python Quality (Ruff)
+
+on:
+  pull_request:
+    branches: [ develop, main ]
+    paths:
+      - 'python/**'
+      - '**.py'
+      - 'requirements.txt'
+  push:
+    branches: [ develop ]
+    paths:
+      - 'python/**'
+      - '**.py'
+      - 'requirements.txt'
+
+jobs:
+  ruff-lint:
+    name: Run Ruff Linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Ruff Action
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check ."
