@@ -59,6 +59,8 @@
 ---
 
 ## 4. `credit_profiles` — скоринг и кредитная история (снимок на момент выдачи)
+> [!CAUTION]
+> *В сырых данных dti < 0 является техническим маркером отсутствия расчета; на этапе ETL такие значения трансформируются в NULL под ограничение CHECK >= 0.*
 
 | Поле | Тип | Ограничения | Категория |
 |---|---|---|---|
@@ -90,16 +92,16 @@
 | `total_bal_il` | `numeric(14,2)` | NULL, CHECK ≥ 0 | Банковская тайна |
 | `il_util` | `numeric(6,2)` | NULL | Банковская тайна |
 | `open_rv_12m` | `smallint` | NULL | Банковская тайна |
-| `open_rv_24m` | `smallint` | NULL | Банковская тайна |
+| `open_rv_24m` | `smallint` | NULL, CHECK ≥ 0 | Банковская тайна |
 | `max_bal_bc` | `numeric(14,2)` | NULL, CHECK ≥ 0 | Банковская тайна |
 | `all_util` | `numeric(6,2)` | NULL | Банковская тайна |
-| `total_rev_hi_lim` | `numeric(14,2)` | — | Банковская тайна |
+| `total_rev_hi_lim` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
 | `inq_fi` | `smallint` | NULL | Банковская тайна |
 | `total_cu_tl` | `smallint` | NULL | Банковская тайна |
 | `inq_last_12m` | `smallint` | NULL | Банковская тайна |
 | `acc_open_past_24mths` | `smallint` | — | Банковская тайна |
 | `avg_cur_bal` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
-| `bc_open_to_buy` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
+| `bc_open_to_buy` | `numeric(14,2)` | — | Банковская тайна |
 | `bc_util` | `numeric(6,2)` | — | Банковская тайна |
 | `chargeoff_within_12_mths` | `smallint` | — | Банковская тайна |
 | `delinq_amnt` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
@@ -148,9 +150,9 @@
 | `state_id` | `bigint` | PK, NOT NULL | Общедоступные |
 | `loan_id` | `bigint` | FK → `loans.loan_id`, NOT NULL, UNIQUE | Общедоступные |
 | `out_prncp` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
-| `out_prncp_inv` | `numeric(14,2)` | — | Банковская тайна |
+| `out_prncp_inv` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
 | `total_pymnt` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
-| `total_pymnt_inv` | `numeric(14,2)` | — | Банковская тайна |
+| `total_pymnt_inv` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
 | `total_rec_prncp` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
 | `total_rec_int` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
 | `total_rec_late_fee` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
@@ -199,12 +201,14 @@
 | `guarantor_id` | `bigint` | PK, NOT NULL | Общедоступные |
 | `loan_id` | `bigint` | FK → `loans.loan_id`, NOT NULL | Общедоступные |
 | `full_name` | `varchar(255)` | NOT NULL | ПДн (152-ФЗ) |
-| `passport_hash` | `char(64)` | NOT NULL, UNIQUE | ПДн (152-ФЗ) |
+| `passport_hash` | `char(64)` | NOT NULL | ПДн (152-ФЗ) |
 | `phone` | `varchar(20)` | NOT NULL | ПДн (152-ФЗ) |
 | `income` | `numeric(14,2)` | CHECK ≥ 0 | ПДн (152-ФЗ) |
 | `relationship` | `varchar(50)` | — | ПДн (152-ФЗ) |
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
+
+>Примечание: сделать составное ограничение UNIQUE (loan_id, passport_hash).
 ---
 
 ## 8. `collaterals` — залоги (ТЗ)
