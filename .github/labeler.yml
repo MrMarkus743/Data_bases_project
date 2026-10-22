@@ -1,0 +1,15 @@
+database:
+  - changed-files:
+      - any-glob-to-any-file: ['sql/**', 'scripts/**', '*.sql']
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', '*.md']
+
+devops:
+  - changed-files:
+      - any-glob-to-any-file: ['docker-compose.yml', 'Dockerfile', '.env*', '.github/**']
+
+python:
+  - changed-files:
+      - any-glob-to-any-file: ['python/**', '*.py', 'requirements.txt']

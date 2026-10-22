@@ -1,0 +1,39 @@
+name: Repository Guard
+
+on:
+  pull_request:
+    branches: [ develop, main ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  guard:
+    name: Validate file sizes and sensitive assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify no oversized files (> 10MB)
+        run: |
+          echo "Scanning for files exceeding 10MB..."
+          LARGE_FILES=$(find . -not -path '*/.*' -type f -size +10M)
+          if [ -n "$LARGE_FILES" ]; then
+            echo "::error::Обнаружены файлы размером более 10МБ (датасеты и тяжелые архивы не должны попадать в Git):"
+            echo "$LARGE_FILES"
+            exit 1
+          fi
+          echo "Проверка размера файлов пройдена успешно."
+
+      - name: Verify no exposed secrets or raw data archives
+        run: |
+          echo "Scanning for forbidden and sensitive files..."
+          FORBIDDEN=$(find . -not -path '*/.*' -type f \( -name ".env" -o -name "*.dump" -o -name "*.key" -o -name "*.pem" -o -name "*accepted_2007*" \))
+          if [ -n "$FORBIDDEN" ]; then
+            echo "::error::Обнаружены недопустимые файлы в репозитории:"
+            echo "$FORBIDDEN"
+            echo "Файлы .env с паролями и архивы датасетов должны быть строго изолированы через .gitignore!"
+            exit 1
+          fi
+          echo "Проверка конфиденциальных файлов пройдена успешно."
+          
