@@ -11,9 +11,6 @@ jobs:
       pull-requests: write
       issues: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Copy assignees from linked issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -22,22 +19,24 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           ACTOR: ${{ github.actor }}
         run: |
-          # 1. Ищем номер связанной задачи из описания PR
-          ISSUE_NUM=$(echo "$PR_BODY" | grep -ioE "(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved) #[0-9]+" | head -n 1 | grep -oE "[0-9]+")
+          echo "Обработка PR #$PR_NUM в репозитории $GH_REPO..."
+          
+          # 1. Извлекаем номер связанного тикета
+          ISSUE_NUM=$(echo "$PR_BODY" | grep -ioE "(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved) #[0-9]+" | head -n 1 | grep -oE "[0-9]+" || true)
 
           if [ -n "$ISSUE_NUM" ]; then
             echo "Найдена связанная задача: #$ISSUE_NUM"
-            # 2. Получаем логины всех исполнителей задачи
-            ASSIGNEES=$(gh issue view "$ISSUE_NUM" --repo "$GH_REPO" --json assignees -q '.assignees[].login' | tr '\n' ',' | sed 's/,$//')
+            # 2. Получаем логины исполнителей через API
+            ASSIGNEES=$(gh issue view "$ISSUE_NUM" --repo "$GH_REPO" --json assignees -q '.assignees[].login' | tr '\n' ',' | sed 's/,$//' || true)
 
             if [ -n "$ASSIGNEES" ]; then
-              echo "Назначаем исполнителей из задачи: $ASSIGNEES"
-              gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ASSIGNEES"
+              echo "Назначаем исполнителей: $ASSIGNEES"
+              gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ASSIGNEES" || echo "Предупреждение: не удалось назначить $ASSIGNEES"
             else
-              echo "В задаче не было исполнителей, назначаем автора PR: $ACTOR"
-              gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ACTOR"
+              echo "В задаче нет исполнителей. Назначаем автора PR: $ACTOR"
+              gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ACTOR" || echo "Предупреждение: не удалось назначить $ACTOR"
             fi
           else
-            echo "Связанная задача не найдена, назначаем автора PR: $ACTOR"
-            gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ACTOR"
+            echo "Связанная задача не указана. Назначаем автора PR: $ACTOR"
+            gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ACTOR" || echo "Предупреждение: не удалось назначить $ACTOR"
           fi
