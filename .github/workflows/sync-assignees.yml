@@ -11,27 +11,33 @@ jobs:
       pull-requests: write
       issues: read
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Copy assignees from linked issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_NUM: ${{ github.event.pull_request.number }}
           ACTOR: ${{ github.actor }}
         run: |
+          # 1. Ищем номер связанной задачи из описания PR
           ISSUE_NUM=$(echo "$PR_BODY" | grep -ioE "(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved) #[0-9]+" | head -n 1 | grep -oE "[0-9]+")
 
           if [ -n "$ISSUE_NUM" ]; then
             echo "Найдена связанная задача: #$ISSUE_NUM"
-            ASSIGNEES=$(gh issue view "$ISSUE_NUM" --json assignees -q '.assignees[].login' | tr '\n' ',' | sed 's/,$//')
+            # 2. Получаем логины всех исполнителей задачи
+            ASSIGNEES=$(gh issue view "$ISSUE_NUM" --repo "$GH_REPO" --json assignees -q '.assignees[].login' | tr '\n' ',' | sed 's/,$//')
 
             if [ -n "$ASSIGNEES" ]; then
-              echo "Назначаем исполнителей: $ASSIGNEES"
-              gh pr edit "$PR_NUM" --add-assignee "$ASSIGNEES"
+              echo "Назначаем исполнителей из задачи: $ASSIGNEES"
+              gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ASSIGNEES"
             else
               echo "В задаче не было исполнителей, назначаем автора PR: $ACTOR"
-              gh pr edit "$PR_NUM" --add-assignee "$ACTOR"
+              gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ACTOR"
             fi
           else
-            echo "Связанная задача не указана, назначаем автора PR: $ACTOR"
-            gh pr edit "$PR_NUM" --add-assignee "$ACTOR"
+            echo "Связанная задача не найдена, назначаем автора PR: $ACTOR"
+            gh pr edit "$PR_NUM" --repo "$GH_REPO" --add-assignee "$ACTOR"
           fi
