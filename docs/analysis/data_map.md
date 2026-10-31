@@ -16,7 +16,7 @@
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
-> Примечание 1: `client_id` генерируется; в датасете `member_id`. На практике `clients 1:1 loans`.
+> Примечание 1: client_id генерируется; в датасете member_id.
 > Примечание 2: `member_id` в исходном датасете полностью пустой (0% заполнения), поэтому `client_id` генерируется суррогатным ключом (SERIAL/IDENTITY). Маппинг `member_id` → `client_id` не выполняется.
 > Примечание 3: `zip_code` char(5) — в исходном датасете код маскирован (954xx), хранится как строка фиксированной длины 5. Не использовать как int: ведущие нули и xx-суффикс делают числовое представление некорректным.
 ---
@@ -77,7 +77,7 @@
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
 > Примечание 1: grade транзитивно зависит от sub_grade. Оставлено в loans осознанно для упрощения запросов; при строгой 3НФ grade выносится в справочник sub_grades(sub_grade, grade).
-> Примечание 2: Связь loan_id:client_id - 1:N на уровне БД. На практике 1:1 из-за отсутствия member_id в датасете. После дополнительного добавления записей клиентов связь может стать 1:N.
+> Примечание 2: Связь loan_id:client_id - 1:N на уровне БД.
 > Примечание 3: Поля annual_inc, emp_title, emp_length и home_ownership - неизменяемый скоринговый снимок анкеты на момент выдачи займа.
 > Примечание 4: Поле `term` в исходном CSV приходит как строка '36 months'/'60 months', требует парсинга в `smallint` (term_months) на этапе ETL.
 > Примечание 5: Поля `issue_d`, `earliest_cr_line`, `last_pymnt_d`, `next_pymnt_d`, `last_credit_pull_d`, `debt_settlement_flag_date`, `settlement_date`, `hardship_start_date`, `hardship_end_date`, `payment_plan_start_date` в исходном CSV приходят в формате MMM-YYYY (например, 'Dec-2015'), требуют парсинга в `DATE` на этапе ETL.
@@ -168,6 +168,7 @@
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 ---
+> Примечание: Поля с процентными ставками (например, revol_util, il_util, all_util, bc_util, pct_tl_nvr_dlq, percent_bc_gt_75) в исходном CSV могут содержать знак %. На этапе ETL требуется очистка строки от знака % и приведение к типу numeric.
 
 ## 5. `loan_financial_state` — финансовое состояние займа
 
@@ -199,7 +200,7 @@
 | `loan_id` | `bigint` | FK → `loans.loan_id`, NOT NULL, UNIQUE | Общедоступные |
 | `co_client_id` | `bigint` | FK → `clients.client_id`, NOT NULL | Общедоступные |
 | `annual_inc_joint` | `numeric(14,2)` | CHECK ≥ 0 | ПДн (152-ФЗ) |
-| `dti_joint` | `numeric(6,2)` | CHECK ≥ 0 | Банковская тайна |
+| `dti_joint` | `numeric(6,2)` | CHECK (dti_joint >= 0 OR dti_joint IS NULL) | Банковская тайна |
 | `verification_status_joint` | `varchar(20)` | — | Банковская тайна |
 | `revol_bal_joint` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
 | `sec_app_fico_range_low` | `smallint` | — | Банковская тайна |
@@ -217,7 +218,8 @@
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
->Примечание: Ограничение "co_client_id ≠ основной заёмщик". Можно реализовать с помощью триггера или ограничить в коде приложения, которое будет вставлять данные.
+>Примечание 1: Ограничение "co_client_id ≠ основной заёмщик". Можно реализовать с помощью триггера или ограничить в коде приложения, которое будет вставлять данные.
+>Примечание 2: Поле sec_app_revol_util в исходном CSV может содержать знак %. На этапе ETL требуется очистка строки от знака % и приведение к типу numeric.
 ---
 
 ## 7. `guarantors` — поручители (ТЗ)
@@ -260,7 +262,7 @@
 | `table_name` | `varchar(63)` | NOT NULL, CHECK IN ('clients','loans','credit_profiles','loan_financial_state','joint_applications','guarantors','collaterals','loan_purposes') | Общедоступные |
 | `record_id` | `bigint` | NOT NULL | Общедоступные |
 | `operation` | `varchar(10)` | NOT NULL, CHECK IN ('INSERT','UPDATE','DELETE') | Общедоступные |
-| `changed_by` | `varchar(255)` | NOT NULL — заполняется триггером из session_user, DEFAULT не требуется | ПДн (152-ФЗ) |
+| `changed_by` | `varchar(255)` | NOT NULL — заполняется триггером из session_user, DEFAULT не требуется | Общедоступные |
 | `changed_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `old_value` | `jsonb` | NULL | Наследует категорию `table_name` (ПДн + Банковская тайна) |
 | `new_value` | `jsonb` | NULL | Наследует категорию `table_name` (ПДн + Банковская тайна) |
