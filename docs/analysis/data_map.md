@@ -1,3 +1,12 @@
+> [!NOTE]
+> **Статус:** Утверждено к разработке DDL<br>
+> **Дата утверждения:** 31.10.2026<br>
+> **Ответственные:**
+> * 🟢 **DBA** (@dkovyaboba) — валидация типов данных, целостности и ограничений
+> * 🔵 **Developer** (@MrMarkus743) — сверка маппинга колонок Lending Club и генерации Faker
+> * 🟣 **Analyst** (@ProgCodTim) — концептуальная модель и разметка 152-ФЗ
+---
+
 ## 1. `loan_purposes` — справочник целей
 
 | Поле | Тип | Ограничения | Категория |
@@ -89,6 +98,8 @@
 > Примечание 5: Поля `issue_d`, `earliest_cr_line`, `last_pymnt_d`, `next_pymnt_d`, `last_credit_pull_d`, `debt_settlement_flag_date`, `settlement_date`, `hardship_start_date`, `hardship_end_date`, `payment_plan_start_date` в исходном CSV приходят в формате MMM-YYYY (например, 'Dec-2015'), требуют парсинга в `DATE` на этапе ETL.
 
 > Примечание 6: Поля hardship_* и settlement_* заполнены частично (0.4–1.5% в датасете), поэтому допускают NULL.
+
+> Примечание 7: Поле `int_rate` в исходном датасете содержит пробелы и знак '%' (' 10.65%'). На этапе ETL требует очистки для numeric(6,3).
 ---
 
 ## 4. `credit_profiles` — скоринг и кредитная история (снимок на момент выдачи)
@@ -225,9 +236,9 @@
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
->Примечание 1: Ограничение "co_client_id ≠ основной заёмщик". Можно реализовать с помощью триггера или ограничить в коде приложения, которое будет вставлять данные.
+> Примечание 1: Ограничение "co_client_id ≠ основной заёмщик". Можно реализовать с помощью триггера или ограничить в коде приложения, которое будет вставлять данные.
 
->Примечание 2: Поле sec_app_revol_util в исходном CSV может содержать знак %. На этапе ETL требуется очистка строки от знака % и приведение к типу numeric.
+> Примечание 2: Поле sec_app_revol_util в исходном CSV может содержать знак %. На этапе ETL требуется очистка строки от знака % и приведение к типу numeric.
 ---
 
 ## 7. `guarantors` — поручители (ТЗ)
@@ -244,7 +255,9 @@
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
->Примечание: составное ограничение UNIQUE (loan_id, passport_hash) задано на уровне таблицы (не только в примечании).
+> Примечание 1: составное ограничение UNIQUE (loan_id, passport_hash) задано на уровне таблицы (не только в примечании).
+
+> Примечание 2: таблица отсутствует в Lending Club; поля `full_name`, `phone`, `income`, `relationship` и `passport_hash` формируются генератором синтетических данных (Faker) в соответствии со 152-ФЗ.
 ---
 
 ## 8. `collaterals` — залоги (ТЗ)
@@ -260,6 +273,8 @@
 | `cadastral_number` | `varchar(30)` | NULL | ПДн (152-ФЗ) |
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
+
+> Примечание: таблица отсутствует в Lending Club; поля `collateral_type`, `description`, `appraised_value`, `vin` и `cadastral_number` генерируются Faker для выполнения условий ТЗ по залогам.
 ---
 
 ## 9. `audit_log` — аудит (ТЗ)
@@ -274,4 +289,7 @@
 | `changed_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `old_value` | `jsonb` | NULL | Наследует категорию `table_name` (ПДн + Банковская тайна) |
 | `new_value` | `jsonb` | NULL | Наследует категорию `table_name` (ПДн + Банковская тайна) |
+
+> [!CAUTION]
+> *Регламент ETL: скрипт прямой загрузки данных в audit_log ничего не пишет. Таблица наполняется исключительно триггерами СУБД (triggers_functions.sql). На момент выполнения первичной пакетной заливки CSV триггеры аудита должны быть отключены (DISABLE TRIGGER) либо создаваться строго после завершения загрузки.*
 ---
