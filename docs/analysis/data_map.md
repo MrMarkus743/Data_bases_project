@@ -17,7 +17,9 @@
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
 > Примечание 1: client_id генерируется; в датасете member_id.
+
 > Примечание 2: `member_id` в исходном датасете полностью пустой (0% заполнения), поэтому `client_id` генерируется суррогатным ключом (SERIAL/IDENTITY). Маппинг `member_id` → `client_id` не выполняется.
+
 > Примечание 3: `zip_code` char(5) — в исходном датасете код маскирован (954xx), хранится как строка фиксированной длины 5. Не использовать как int: ведущие нули и xx-суффикс делают числовое представление некорректным.
 ---
 
@@ -77,10 +79,15 @@
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
 > Примечание 1: grade транзитивно зависит от sub_grade. Оставлено в loans осознанно для упрощения запросов; при строгой 3НФ grade выносится в справочник sub_grades(sub_grade, grade).
+
 > Примечание 2: Связь loan_id:client_id - 1:N на уровне БД.
+
 > Примечание 3: Поля annual_inc, emp_title, emp_length и home_ownership - неизменяемый скоринговый снимок анкеты на момент выдачи займа.
+
 > Примечание 4: Поле `term` в исходном CSV приходит как строка '36 months'/'60 months', требует парсинга в `smallint` (term_months) на этапе ETL.
+
 > Примечание 5: Поля `issue_d`, `earliest_cr_line`, `last_pymnt_d`, `next_pymnt_d`, `last_credit_pull_d`, `debt_settlement_flag_date`, `settlement_date`, `hardship_start_date`, `hardship_end_date`, `payment_plan_start_date` в исходном CSV приходят в формате MMM-YYYY (например, 'Dec-2015'), требуют парсинга в `DATE` на этапе ETL.
+
 > Примечание 6: Поля hardship_* и settlement_* заполнены частично (0.4–1.5% в датасете), поэтому допускают NULL.
 ---
 
@@ -219,6 +226,7 @@
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
 >Примечание 1: Ограничение "co_client_id ≠ основной заёмщик". Можно реализовать с помощью триггера или ограничить в коде приложения, которое будет вставлять данные.
+
 >Примечание 2: Поле sec_app_revol_util в исходном CSV может содержать знак %. На этапе ETL требуется очистка строки от знака % и приведение к типу numeric.
 ---
 
