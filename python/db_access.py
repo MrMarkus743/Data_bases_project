@@ -68,7 +68,5 @@ if __name__ == "__main__":
         print(f"✅ Успешное подключение к PostgreSQL!\n{version}")
     except psycopg.Error as err:
         print(f"❌ Ошибка базы данных (PostgreSQL): {err}")
-    except Exception as err:
-        print(f"❌ Непредвиденная системная ошибка: {err}")
     finally:
         pool.close()
