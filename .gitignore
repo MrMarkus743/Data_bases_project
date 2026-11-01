@@ -1,6 +1,7 @@
 # Python virtual environment & cache
 venv/
 .env
+!.env.example
 __pycache__/
 *.py[cod]
 
@@ -19,6 +20,7 @@ pg_data/
 # Large raw datasets (>50-100 MB)
 data/
 *.csv
+!tests/fixtures/sample_100.csv
 *.xlsx
 *.parquet
 
