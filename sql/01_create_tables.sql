@@ -3,10 +3,6 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- ==========================================
--- 1. СПРАВОЧНИКИ И НЕЗАВИСИМЫЕ СУЩНОСТИ
--- ==========================================
-
 CREATE TABLE loan_purposes (
     purpose_id   smallint PRIMARY KEY,
     purpose_name varchar(100) NOT NULL UNIQUE
@@ -19,10 +15,6 @@ CREATE TABLE clients (
     created_at  timestamp NOT NULL DEFAULT now(),
     updated_at  timestamp NOT NULL DEFAULT now()
 );
-
--- ==========================================
--- 2. ОСНОВНЫЕ ТАБЛИЦЫ (БЕЗ ПДН)
--- ==========================================
 
 CREATE TABLE loans (
     loan_id                   bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -56,7 +48,6 @@ CREATE TABLE loans (
     policy_code               smallint NOT NULL CHECK (policy_code IN (1,2)),
     hardship_flag             char(1) NOT NULL CHECK (hardship_flag IN ('N','Y')),
     
-    -- Блок hardship
     hardship_type             varchar(50),
     hardship_reason           varchar(50),
     hardship_status           varchar(20),
@@ -72,7 +63,6 @@ CREATE TABLE loans (
     hardship_payoff_balance_amount numeric(14,2) CHECK (hardship_payoff_balance_amount >= 0),
     hardship_last_payment_amount   numeric(12,2) CHECK (hardship_last_payment_amount >= 0),
     
-    -- Блок settlement
     debt_settlement_flag_date date,
     settlement_status         varchar(20),
     settlement_date           date,
@@ -187,9 +177,7 @@ CREATE TABLE joint_applications (
     joint_application_id     bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     loan_id                  bigint NOT NULL UNIQUE REFERENCES loans(loan_id),
     co_client_id             bigint NOT NULL REFERENCES clients(client_id),
-    
     annual_inc_joint_encrypted bytea,
-    
     dti_joint                numeric(6,2) CHECK (dti_joint >= 0 OR dti_joint IS NULL),
     verification_status_joint varchar(20),
     revol_bal_joint          numeric(14,2) CHECK (revol_bal_joint >= 0),
@@ -208,10 +196,6 @@ CREATE TABLE joint_applications (
     created_at               timestamp NOT NULL DEFAULT now(),
     updated_at               timestamp NOT NULL DEFAULT now()
 );
-
--- ==========================================
--- 3. ВСПОМОГАТЕЛЬНЫЕ СУЩНОСТИ (ТЗ + 152-ФЗ)
--- ==========================================
 
 CREATE TABLE guarantors (
     guarantor_id    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -233,20 +217,13 @@ CREATE TABLE collaterals (
     collateral_id   bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     loan_id         bigint NOT NULL REFERENCES loans(loan_id),
     collateral_type varchar(30) NOT NULL,
-    
-    
     description_encrypted bytea, 
-    
     appraised_value numeric(14,2) CHECK (appraised_value >= 0),
     vin             char(17) CHECK (vin ~ '^[A-HJ-NPR-Z0-9]{17}$'),
     cadastral_number varchar(30),
     created_at      timestamp NOT NULL DEFAULT now(),
     updated_at      timestamp NOT NULL DEFAULT now()
 );
-
--- ==========================================
--- 4. СИСТЕМНАЯ ТАБЛИЦА АУДИТА
--- ==========================================
 
 CREATE TABLE audit_log (
     audit_id    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -259,9 +236,6 @@ CREATE TABLE audit_log (
     new_value   jsonb
 );
 
--- ==========================================
--- 5. ИНДЕКСЫ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
--- ==========================================
 CREATE INDEX idx_loans_client_id ON loans(client_id);
 CREATE INDEX idx_loans_purpose_id ON loans(purpose_id);
 CREATE INDEX idx_credit_profiles_loan_id ON credit_profiles(loan_id);
