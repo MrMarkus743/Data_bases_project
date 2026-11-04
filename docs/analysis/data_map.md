@@ -1,3 +1,12 @@
+> [!NOTE]
+> **Статус:** Утверждено к разработке DDL<br>
+> **Дата утверждения:** 31.10.2026<br>
+> **Ответственные:**
+> * 🟢 **DBA** (@dkovyaboba) — валидация типов данных, целостности и ограничений
+> * 🔵 **Developer** (@MrMarkus743) — сверка маппинга колонок Lending Club и генерации Faker
+> * 🟣 **Analyst** (@ProgCodTim) — концептуальная модель и разметка 152-ФЗ
+---
+
 ## 1. `loan_purposes` — справочник целей
 
 | Поле | Тип | Ограничения | Категория |
@@ -12,12 +21,15 @@
 |---|---|---|---|
 | `client_id` | `bigint` | PK, NOT NULL | Общедоступные |
 | `addr_state` | `char(2)` | — | ПДн (152-ФЗ) |
-| `zip_code` | `char(5)` | — | ПДн (152-ФЗ) |
+| `zip_code` | `char(5)` | CHECK (zip_code ~ '^[0-9]{3}[0-9xX]{2}$') | ПДн (152-ФЗ) |
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
-> Примечание 1: `client_id` генерируется; в датасете `member_id`. На практике `clients 1:1 loans`.
-> Примечание 2: 'zip_code' char(5) — в исходном датасете код маскирован (954xx), хранится как строка фиксированной длины 5. Не использовать как int: ведущие нули и xx-суффикс делают числовое представление некорректным.
+> Примечание 1: client_id генерируется; в датасете member_id.
+
+> Примечание 2: `member_id` в исходном датасете полностью пустой (0% заполнения), поэтому `client_id` генерируется суррогатным ключом (SERIAL/IDENTITY). Маппинг `member_id` → `client_id` не выполняется.
+
+> Примечание 3: `zip_code` char(5) — в исходном датасете код маскирован (954xx), хранится как строка фиксированной длины 5. Не использовать как int: ведущие нули и xx-суффикс делают числовое представление некорректным.
 ---
 
 ## 3. `loans` — займы
@@ -50,12 +62,44 @@
 | `emp_length` | `varchar(20)` | — | ПДн (152-ФЗ) |
 | `home_ownership` | `varchar(20)` | — | Общедоступные |
 | `verification_status` | `varchar(20)` | — | Банковская тайна |
+| `policy_code` | `smallint` | NOT NULL, CHECK IN (1,2) | Банковская тайна |
+| `hardship_flag` | `char(1)` | NOT NULL, CHECK IN ('N','Y') | Банковская тайна |
+| `hardship_type` | `varchar(50)` | NULL | Банковская тайна |
+| `hardship_reason` | `varchar(50)` | NULL | Банковская тайна |
+| `hardship_status` | `varchar(20)` | NULL | Банковская тайна |
+| `deferral_term` | `smallint` | NULL | Банковская тайна |
+| `hardship_amount` | `numeric(12,2)` | NULL, CHECK ≥ 0 | Банковская тайна |
+| `hardship_start_date` | `date` | NULL | Банковская тайна |
+| `hardship_end_date` | `date` | NULL | Банковская тайна |
+| `payment_plan_start_date` | `date` | NULL | Банковская тайна |
+| `hardship_length` | `smallint` | NULL | Банковская тайна |
+| `hardship_dpd` | `smallint` | NULL | Банковская тайна |
+| `hardship_loan_status` | `varchar(40)` | NULL | Банковская тайна |
+| `orig_projected_additional_accrued_interest` | `numeric(12,2)` | NULL, CHECK ≥ 0 | Банковская тайна |
+| `hardship_payoff_balance_amount` | `numeric(14,2)` | NULL, CHECK ≥ 0 | Банковская тайна |
+| `hardship_last_payment_amount` | `numeric(12,2)` | NULL, CHECK ≥ 0 | Банковская тайна |
+| `debt_settlement_flag_date` | `date` | NULL | Банковская тайна |
+| `settlement_status` | `varchar(20)` | NULL | Банковская тайна |
+| `settlement_date` | `date` | NULL | Банковская тайна |
+| `settlement_amount` | `numeric(14,2)` | NULL, CHECK ≥ 0 | Банковская тайна |
+| `settlement_percentage` | `numeric(6,2)` | NULL | Банковская тайна |
+| `settlement_term` | `smallint` | NULL | Банковская тайна |
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
 > Примечание 1: grade транзитивно зависит от sub_grade. Оставлено в loans осознанно для упрощения запросов; при строгой 3НФ grade выносится в справочник sub_grades(sub_grade, grade).
-> Примечание 2: Связь loan_id:client_id - 1:N на уровне БД. На практике 1:1 из-за отсутствия member_id в датасете. После дополнительного добавления записей клиентов связь может стать 1:N.
+
+> Примечание 2: Связь loan_id:client_id - 1:N на уровне БД.
+
 > Примечание 3: Поля annual_inc, emp_title, emp_length и home_ownership - неизменяемый скоринговый снимок анкеты на момент выдачи займа.
+
+> Примечание 4: Поле `term` в исходном CSV приходит как строка '36 months'/'60 months', требует парсинга в `smallint` (term_months) на этапе ETL.
+
+> Примечание 5: Поля `issue_d`, `earliest_cr_line`, `last_pymnt_d`, `next_pymnt_d`, `last_credit_pull_d`, `debt_settlement_flag_date`, `settlement_date`, `hardship_start_date`, `hardship_end_date`, `payment_plan_start_date` в исходном CSV приходят в формате MMM-YYYY (например, 'Dec-2015'), требуют парсинга в `DATE` на этапе ETL.
+
+> Примечание 6: Поля hardship_* и settlement_* заполнены частично (0.4–1.5% в датасете), поэтому допускают NULL.
+
+> Примечание 7: Поле `int_rate` в исходном датасете содержит пробелы и знак '%' (' 10.65%'). На этапе ETL требует очистки для numeric(6,3).
 ---
 
 ## 4. `credit_profiles` — скоринг и кредитная история (снимок на момент выдачи)
@@ -66,7 +110,7 @@
 |---|---|---|---|
 | `profile_id` | `bigint` | PK, NOT NULL | Общедоступные |
 | `loan_id` | `bigint` | FK → `loans.loan_id`, NOT NULL, UNIQUE | Общедоступные |
-| `dti` | `numeric(6,2)` | CHECK ≥ 0 | Банковская тайна |
+| `dti` | `numeric(6,2)` | CHECK (dti >= 0 OR dti IS NULL) | Банковская тайна |
 | `delinq_2yrs` | `smallint` | — | Банковская тайна |
 | `earliest_cr_line` | `date` | — | Банковская тайна |
 | `fico_range_low` | `smallint` | — | Банковская тайна |
@@ -142,6 +186,7 @@
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 ---
+> Примечание: Поля с процентными ставками (например, revol_util, il_util, all_util, bc_util, pct_tl_nvr_dlq, percent_bc_gt_75) в исходном CSV могут содержать знак %. На этапе ETL требуется очистка строки от знака % и приведение к типу numeric.
 
 ## 5. `loan_financial_state` — финансовое состояние займа
 
@@ -173,7 +218,7 @@
 | `loan_id` | `bigint` | FK → `loans.loan_id`, NOT NULL, UNIQUE | Общедоступные |
 | `co_client_id` | `bigint` | FK → `clients.client_id`, NOT NULL | Общедоступные |
 | `annual_inc_joint` | `numeric(14,2)` | CHECK ≥ 0 | ПДн (152-ФЗ) |
-| `dti_joint` | `numeric(6,2)` | CHECK ≥ 0 | Банковская тайна |
+| `dti_joint` | `numeric(6,2)` | CHECK (dti_joint >= 0 OR dti_joint IS NULL) | Банковская тайна |
 | `verification_status_joint` | `varchar(20)` | — | Банковская тайна |
 | `revol_bal_joint` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
 | `sec_app_fico_range_low` | `smallint` | — | Банковская тайна |
@@ -191,7 +236,9 @@
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
->Примечание: Ограничение "co_client_id ≠ основной заёмщик". Можно реализовать с помощью триггера или ограничить в коде приложения, которое будет вставлять данные.
+> Примечание 1: Ограничение "co_client_id ≠ основной заёмщик". Можно реализовать с помощью триггера или ограничить в коде приложения, которое будет вставлять данные.
+
+> Примечание 2: Поле sec_app_revol_util в исходном CSV может содержать знак %. На этапе ETL требуется очистка строки от знака % и приведение к типу numeric.
 ---
 
 ## 7. `guarantors` — поручители (ТЗ)
@@ -201,14 +248,16 @@
 | `guarantor_id` | `bigint` | PK, NOT NULL | Общедоступные |
 | `loan_id` | `bigint` | FK → `loans.loan_id`, NOT NULL | Общедоступные |
 | `full_name` | `varchar(255)` | NOT NULL | ПДн (152-ФЗ) |
-| `passport_hash` | `char(64)` | NOT NULL | ПДн (152-ФЗ) |
+| `passport_hash` | `char(64)` | NOT NULL, UNIQUE (loan_id, passport_hash) | ПДн (152-ФЗ) |
 | `phone` | `varchar(20)` | NOT NULL | ПДн (152-ФЗ) |
 | `income` | `numeric(14,2)` | CHECK ≥ 0 | ПДн (152-ФЗ) |
 | `relationship` | `varchar(50)` | — | ПДн (152-ФЗ) |
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 
->Примечание: сделать составное ограничение UNIQUE (loan_id, passport_hash).
+> Примечание 1: составное ограничение UNIQUE (loan_id, passport_hash) задано на уровне таблицы (не только в примечании).
+
+> Примечание 2: таблица отсутствует в Lending Club; поля `full_name`, `phone`, `income`, `relationship` и `passport_hash` формируются генератором синтетических данных (Faker) в соответствии со 152-ФЗ.
 ---
 
 ## 8. `collaterals` — залоги (ТЗ)
@@ -220,10 +269,12 @@
 | `collateral_type` | `varchar(30)` | NOT NULL | Общедоступные |
 | `description` | `text` | — | ПДн (152-ФЗ) |
 | `appraised_value` | `numeric(14,2)` | CHECK ≥ 0 | Банковская тайна |
-| `vin` | `char(17)` | NULL | ПДн (152-ФЗ) |
+| `vin` | `char(17)` | NULL, CHECK (vin ~ '^[A-HJ-NPR-Z0-9]{17}$') | ПДн (152-ФЗ) |
 | `cadastral_number` | `varchar(30)` | NULL | ПДн (152-ФЗ) |
 | `created_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `updated_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
+
+> Примечание: таблица отсутствует в Lending Club; поля `collateral_type`, `description`, `appraised_value`, `vin` и `cadastral_number` генерируются Faker для выполнения условий ТЗ по залогам.
 ---
 
 ## 9. `audit_log` — аудит (ТЗ)
@@ -234,8 +285,11 @@
 | `table_name` | `varchar(63)` | NOT NULL, CHECK IN ('clients','loans','credit_profiles','loan_financial_state','joint_applications','guarantors','collaterals','loan_purposes') | Общедоступные |
 | `record_id` | `bigint` | NOT NULL | Общедоступные |
 | `operation` | `varchar(10)` | NOT NULL, CHECK IN ('INSERT','UPDATE','DELETE') | Общедоступные |
-| `changed_by` | `varchar(255)` | NOT NULL | ПДн (152-ФЗ) |
+| `changed_by` | `varchar(255)` | NOT NULL — заполняется триггером из session_user, DEFAULT не требуется | Общедоступные |
 | `changed_at` | `timestamp` | NOT NULL, DEFAULT now() | Общедоступные |
 | `old_value` | `jsonb` | NULL | Наследует категорию `table_name` (ПДн + Банковская тайна) |
 | `new_value` | `jsonb` | NULL | Наследует категорию `table_name` (ПДн + Банковская тайна) |
+
+> [!CAUTION]
+> *Регламент ETL: скрипт прямой загрузки данных в audit_log ничего не пишет. Таблица наполняется исключительно триггерами СУБД (triggers_functions.sql). На момент выполнения первичной пакетной заливки CSV триггеры аудита должны быть отключены (DISABLE TRIGGER) либо создаваться строго после завершения загрузки.*
 ---
