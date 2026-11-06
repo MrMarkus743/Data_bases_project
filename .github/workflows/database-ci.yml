@@ -1,0 +1,92 @@
+name: Database CI
+
+on:
+  pull_request:
+    paths:
+      - 'sql/**'
+      - '.sqlfluff'
+      - '.github/workflows/database-ci.yml'
+  push:
+    branches:
+      - develop
+    paths:
+      - 'sql/**'
+      - '.sqlfluff'
+      - '.github/workflows/database-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  validate-database:
+    name: Lint & Test Migrations
+    runs-on: ubuntu-latest
+
+    # Поднимаем легковесный PostgreSQL 16
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: lending_club_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install SQLFluff
+        run: |
+          python -m pip install --upgrade pip
+          pip install sqlfluff
+
+      - name: Lint SQL files with SQLFluff
+        run: |
+          # Проверяем, есть ли непустые sql-файлы для линтинга
+          if [ -d "sql" ] && find sql -type f -name "*.sql" -size +0c | grep -q .; then
+            echo "🔍 Запуск SQLFluff для директории sql/..."
+            sqlfluff lint sql/
+          else
+            echo "ℹ️ Непустые SQL-файлы не найдены. Линтинг пропущен."
+          fi
+
+      - name: Test SQL migrations on PostgreSQL 16
+        env:
+          PGPASSWORD: postgres_ci_password
+        run: |
+          echo "⏳ Проверка доступности PostgreSQL..."
+          pg_isready -h localhost -p 5432 -U postgres
+
+          # Строгий архитектурный порядок применения скриптов
+          ORDERED_FILES=(
+            "sql/schema.sql"
+            "sql/triggers_functions.sql"
+            "sql/seed.sql"
+            "sql/roles.sql"
+            "sql/queries.sql"
+          )
+
+          for file in "${ORDERED_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              if [ -s "$file" ]; then
+                echo "----------------------------------------"
+                echo "Накатка скрипта: $file"
+                echo "----------------------------------------"
+                psql -h localhost -p 5432 -U postgres -d lending_club_test -v ON_ERROR_STOP=1 -f "$file"
+              else
+                echo "⏩ Файл $file пуст, пропускаем накатку."
+              fi
+            fi
+          done
+
+          echo "✅ Все проверенные SQL-скрипты успешно применились!"
