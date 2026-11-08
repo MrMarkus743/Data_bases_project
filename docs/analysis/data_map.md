@@ -33,7 +33,7 @@
 | Lending Club dataset | loans | loan_status | varchar(40) | Fully Paid | Да | Нет | коммерческая тайна |
 | Lending Club dataset | loans | pymnt_plan | char(1) | n | Да | Нет | коммерческая тайна |
 | Lending Club dataset | loans | url | text | https://lendingclub.com/browse/loanDetail... | Нет | Нет | открытые |
-| Lending Club dataset | loans | desc | text | We knew that using our credit cards... | Нет | Нет | ПДн |
+| Lending Club dataset | loans | descr | text | We knew that using our credit cards... | Нет | Нет | ПДн |
 | Lending Club dataset | loans | title | varchar(255) | Debt consolidation | Нет | Нет | ПДн |
 | Lending Club dataset | loans | initial_list_status | char(1) | w | Да | Нет | коммерческая тайна |
 | Lending Club dataset | loans | disbursement_method | varchar(20) | Cash | Да | Нет | коммерческая тайна |
@@ -46,7 +46,7 @@
 | Generated | loans | created_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | loans | updated_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | credit_profiles | profile_id | bigint | 1 | Да | Да | открытые |
-| Generated | credit_profiles | loan_id | bigint | 1001 | Да | Да | открытые |
+| Generated | credit_profiles | loan_id | bigint | 1 | Да | Да | открытые |
 | Lending Club dataset | credit_profiles | dti | numeric(6,2) | 5.91 | Нет | Нет | коммерческая тайна |
 | Lending Club dataset | credit_profiles | delinq_2yrs | smallint | 0 | Нет | Нет | коммерческая тайна |
 | Lending Club dataset | credit_profiles | earliest_cr_line | date | 2003-08-01 | Нет | Нет | коммерческая тайна |
@@ -123,7 +123,7 @@
 | Generated | credit_profiles | created_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | credit_profiles | updated_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | loan_financial_state | state_id | bigint | 1 | Да | Да | открытые |
-| Generated | loan_financial_state | loan_id | bigint | 1001 | Да | Да | открытые |
+| Generated | loan_financial_state | loan_id | bigint | 1 | Да | Да | открытые |
 | Lending Club dataset | loan_financial_state | out_prncp | numeric(14,2) | 0.00 | Нет | Нет | коммерческая тайна |
 | Lending Club dataset | loan_financial_state | out_prncp_inv | numeric(14,2) | 0.00 | Нет | Нет | коммерческая тайна |
 | Lending Club dataset | loan_financial_state | total_pymnt | numeric(14,2) | 4421.72 | Нет | Нет | коммерческая тайна |
@@ -139,8 +139,8 @@
 | Generated | loan_financial_state | created_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | loan_financial_state | updated_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | joint_applications | joint_application_id | bigint | 1 | Да | Да | открытые |
-| Generated | joint_applications | loan_id | bigint | 1001 | Да | Да | открытые |
-| Generated | joint_applications | co_client_id | bigint | 68407278 | Да | Нет | открытые |
+| Generated | joint_applications | loan_id | bigint | 1 | Да | Да | открытые |
+| Generated | joint_applications | co_client_id | bigint | 2 | Да | Нет | открытые |
 | Lending Club dataset | joint_applications | annual_inc_joint | numeric(14,2) | 71000.00 | Нет | Нет | ПДн |
 | Lending Club dataset | joint_applications | dti_joint | numeric(6,2) | 13.85 | Нет | Нет | коммерческая тайна |
 | Lending Club dataset | joint_applications | verification_status_joint | varchar(20) | Not Verified | Нет | Нет | коммерческая тайна |
@@ -160,7 +160,7 @@
 | Generated | joint_applications | created_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | joint_applications | updated_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | guarantors | guarantor_id | bigint | 1 | Да | Да | открытые |
-| Generated | guarantors | loan_id | bigint | 1001 | Да | Нет | открытые |
+| Generated | guarantors | loan_id | bigint | 1 | Да | Нет | открытые |
 | Faker | guarantors | full_name | varchar(255) | Ivan Ivanov | Да | Нет | ПДн |
 | Faker | guarantors | passport_hash | char(64) | a3f5...9c2d (64 hex) | Да | Да (в составе loan_id, passport_hash) | ПДн |
 | Faker | guarantors | phone | varchar(20) | +7 900 123-45-67 | Да | Нет | ПДн |
@@ -169,7 +169,7 @@
 | Generated | guarantors | created_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | guarantors | updated_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | collaterals | collateral_id | bigint | 1 | Да | Да | открытые |
-| Generated | collaterals | loan_id | bigint | 1001 | Да | Нет | открытые |
+| Generated | collaterals | loan_id | bigint | 1 | Да | Нет | открытые |
 | Faker | collaterals | collateral_type | varchar(30) | Car | Да | Нет | открытые |
 | Faker | collaterals | description | text | Toyota Camry 2018, VIN ... | Нет | Нет | ПДн |
 | Faker | collaterals | appraised_value | numeric(14,2) | 850000.00 | Нет | Нет | коммерческая тайна |
@@ -179,7 +179,7 @@
 | Generated | collaterals | updated_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
 | Generated | audit_log | audit_id | bigint | 1 | Да | Да | открытые |
 | Generated | audit_log | table_name | varchar(63) | loans | Да | Нет | открытые |
-| Generated | audit_log | record_id | bigint | 1001 | Да | Нет | открытые |
+| Generated | audit_log | record_id | bigint | 1 | Да | Нет | открытые |
 | Generated | audit_log | operation_type | varchar(10) | UPDATE | Да | Нет | открытые |
 | Generated | audit_log | changed_by | varchar(255) | etl_user | Да | Нет | открытые |
 | Generated | audit_log | changed_at | timestamp | 2024-01-15 10:00:00 | Да | Нет | открытые |
