@@ -19,7 +19,7 @@ idx_loans_purpose_id — ускоряет агрегацию по целям к�
 idx_joint_applications_co_client_id — поиск совместных заявок по созаёмщику.      
 idx_collaterals_loan_id — выборка залогов по займу.
 idx_audit_log_record (table_name, record_id) — история изменений конкретной записи.      
-UNIQUE-ограничения на loan_id в credit_profiles, loan_financial_state, joint_applications автоматически создают уникальные индексы (1:1 доступ).
+UNIQUE-ограничения на `loan_id` в `credit_profiles`, `loan_financial_state`, `joint_applications` автоматически создают уникальные индексы (1:1 доступ). Составное UNIQUE-ограничение `guarantors (loan_id, passport_hash)` также автоматически создаёт уникальный индекс, который покрывает выборку поручителей по займу по правилу левого префикса и запрещает дублирование одного поручителя в рамках займа.
 
 # Итоговые таблицы
 ## 1. `loan_purposes` — справочник целей
@@ -197,7 +197,7 @@ UNIQUE-ограничения на loan_id в credit_profiles, loan_financial_st
 | `loan_id` | `bigint` | FK - `loans.loan_id`, NOT NULL, UNIQUE | Открытые |
 | `co_client_id` | `bigint` | FK - `clients.client_id`, NOT NULL | Открытые |
 | `annual_inc_joint` | `numeric(14,2)` | CHECK ≥ 0 | ПДн (152-ФЗ) |
-| `dti_joint` | `numeric(6,2)` | CHECK ≥ 0 | Коммерческая тайна |
+| `dti_joint` | `numeric(6,2)` | CHECK ≥ 0, NOT NULL | Коммерческая тайна |
 | `verification_status_joint` | `varchar(20)` | — | Коммерческая тайна |
 | `revol_bal_joint` | `numeric(14,2)` | CHECK ≥ 0 | Коммерческая тайна |
 | `sec_app_fico_range_low` | `smallint` | — | Коммерческая тайна |
