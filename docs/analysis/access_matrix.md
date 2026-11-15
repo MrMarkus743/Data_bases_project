@@ -2,7 +2,7 @@
 
 | Роль | Принцип доступа |
 |---|---|
-| `credit_analyst` | Видит банковскую тайну (скоринг, финансовые метрики), но ПДн маскированы. Нет доступа к аудиту. |
+| `credit_analyst` | Видит коммерческую тайну (скоринг, финансовые метрики), но ПДн маскированы. Нет доступа к аудиту. |
 | `loan_operator` | Видит ПДн полностью (оформление договоров), видит финансовые поля, но не может менять скоринг/историю. |
 | `system_auditor` | Доступ только к `audit_log`. |
 |`loan_committee`|Видит заявки и залоги. Может обновлять статус решения по заявке. Нет доступа к аудиту.|
@@ -57,21 +57,21 @@
 
 ## Правила маскирования ПДн
 
-| Таблица.Поле | Категория | credit_analyst | loan_operator | system_auditor | Правило маскирования / обоснование |
-|---|---|---|---|---|---|
-| `clients.addr_state` | ПДн | S\* | S | — | `**` или регион-агрегат (ст. 7 — конфиденциальность) |
-| `clients.zip_code` | ПДн | S\* | S | — | `95***`|
-| `loans.annual_inc` | ПДн | S\* | S | — | диапазон (`100k–150k`) или маска `***` |
-| `loans.emp_title` | ПДн | S\* | S | — | `***` |
-| `loans.emp_length` | ПДн | S\* | S | — | `***` |
-| `loans.descr` | ПДн | S\* | S | — | `NULL` или `'***'` (свободный текст может содержать ПДн) |
-| `loans.title` | ПДн | S\* | S | — | `***` |
-| `joint_applications.annual_inc_joint` | ПДн | S\* | S | — | диапазон / `***` |
-| `guarantors.full_name` | ПДн | S\* | S | — | `И*** И.И.` (ст. 7) |
-| `guarantors.phone` | ПДн | S\* | S | — | `+7*** ***-**-45` |
-| `guarantors.passport_hash` | ПДн | S\* | S | — | усечённый хеш (`abc1…`) либо `***` |
-| `guarantors.income` | ПДн | S\* | S | — | диапазон / `***` |
-| `guarantors.relationship` | ПДн | S\* | S | — | `***` |
-| `collaterals.description` | ПДн | S\* | S | — | `***` |
-| `collaterals.vin` | ПДн | S\* | S | — | `***` |
-| `collaterals.cadastral_number` | ПДн | S\* | S | — | `***` |
+| Таблица.Поле | Категория | Правило маскирования / обоснование |
+|---|---|---|
+| `clients.addr_state` | ПДн  | `**` или регион-агрегат (ст. 7 — конфиденциальность) |
+| `clients.zip_code` | ПДн  | `95***`|
+| `loans.annual_inc` | ПДн  | диапазон (`100k–150k`) или маска `***` |
+| `loans.emp_title` | ПДн  | `***` |
+| `loans.emp_length` | ПДн  | `***` |
+| `loans.descr` | ПДн  | `NULL` или `'***'` (свободный текст может содержать ПДн) |
+| `loans.title` | ПДн  | `***` |
+| `joint_applications.annual_inc_joint` | ПДн  | диапазон / `***` |
+| `guarantors.full_name` | ПДн  | `И*** И.И.` (ст. 7) |
+| `guarantors.phone` | ПДн  | `+7*** ***-**-45` |
+| `guarantors.passport_hash` | ПДн  | усечённый хеш (`abc1…`) либо `***` |
+| `guarantors.income` | ПДн  | диапазон / `***` |
+| `guarantors.relationship` | ПДн  | `***` |
+| `collaterals.description` | ПДн  | `***` |
+| `collaterals.vin` | ПДн  | `***` |
+| `collaterals.cadastral_number` | ПДн  | `***` |

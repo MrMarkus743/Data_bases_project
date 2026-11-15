@@ -13,7 +13,7 @@
 | **DF-03** | Сид-скрипт (`sql/seed.sql`) | PostgreSQL (`loan_purposes`) | 14 нормализованных категорий целей кредитования | SQL DML (`INSERT ... ON CONFLICT`) | Первичное наполнение системных классификаторов до старта пакетного импорта |
 | **DF-04** | Python ETL (`etl_loader.py`) | PostgreSQL (7 таблиц 3НФ) | Очищенные, приведенные к типам и валидированные батчи записей | `psycopg` Binary Stream / `COPY FROM STDIN` | Скоростная пакетная загрузка 2.26M строк с поддержанием ссылочной целостности FK |
 | **DF-05** | Таблица `loans` | Серверная логика (`triggers_functions.sql`) | Новые и модифицируемые строки заявок и кредитных договоров | PL/pgSQL (`BEFORE INSERT OR UPDATE`) | Контроль бизнес-правил (неотрицательность балансов, лимиты сумм, допустимые грейды) |
-| **DF-06** | Серверные триггеры CDC | Таблица `audit_log` | Имя таблицы, тип операции, timestamp, пользователь, снимки OLD/NEW | JSONB (`AFTER INSERT OR UPDATE OR DELETE`) | Неизменяемый структурированный аудит операций над чувствительными данными (152-ФЗ) |
+| **DF-06** | Серверные триггеры CDC | Таблица `audit_log` | `table_name`, `operation_type`, `changed_by`, `changed_at`, `old_value`, `new_value` | JSONB (`AFTER INSERT OR UPDATE OR DELETE`) | Неизменяемый структурированный аудит операций над чувствительными данными (152-ФЗ) |
 | **DF-07** | Таблицы `loans`, `clients` | Маскированные представления (`VIEW`) | Обезличенные анкеты заёмщиков со скрытыми персональными данными и доходами | SQL Security Views (DCL) | Динамическая изоляция конфиденциальных сведений по 152-ФЗ |
 | **DF-07b** | Таблицы `loans`, `loan_financial_state`, `credit_profiles` | Материализованная витрина (`MATERIALIZED VIEW`) | Предрассчитанные тяжелые агрегаты портфеля, скоринговые метрики и статистика дефолтов | SQL Materialized View | Высокопроизводительная витрина для бизнес-аналитиков без пересчёта 2.26M строк |
 | **DF-08** | Маскированные представления | Роль `credit_analyst` | Деперсонализированные выборки, метрики дефолтов, витрины | SQL Query / Read-Only Cursor | Анализ кредитного портфеля, скоринговое моделирование, построение отчётов |
@@ -120,13 +120,13 @@ flowchart TD
     %% Потоки к ролям
     V_MASKED -->|DF-08: Обезличенные выборки| R_ANALYST
     V_ANALYTICS -->|DF-08: Аналитические витрины| R_ANALYST
-    T_CLIENTS -->|DF-09: Управление заёмщиками| R_OPERATOR
-    T_LOANS -->|DF-09: Оформление договоров| R_OPERATOR
-    T_JOINT -->|DF-09: Проверка созаёмщиков| R_OPERATOR
-    T_GUARANTORS -->|DF-09: Проверка поручителей| R_OPERATOR
-    T_COLLATERALS -->|DF-09: Оценка залогов| R_OPERATOR
+    T_CLIENTS <-->|DF-09: Управление заёмщиками| R_OPERATOR
+    T_LOANS <-->|DF-09: Оформление договоров| R_OPERATOR
+    T_JOINT <-->|DF-09: Проверка созаёмщиков| R_OPERATOR
+    T_GUARANTORS <-->|DF-09: Проверка поручителей| R_OPERATOR
+    T_COLLATERALS <-->|DF-09: Оценка залогов| R_OPERATOR
     T_AUDIT -->|DF-10: Чтение журнала изменений данных| R_AUDITOR
-    T_LOANS -->|DF-11: Чтение заявок, U loan_status| R_COMMITTEE
+    T_LOANS <-->|DF-11: Чтение заявок и обновление loan_status| R_COMMITTEE
     T_COLLATERALS -->|DF-11: Чтение залогов| R_COMMITTEE
 ```
 ---
@@ -155,16 +155,14 @@ flowchart TD
   * **`old_value`** (снимок до операции):
     ```json
     {
-      "loan_status": "Current",
-      "out_prncp": 12500.00,
-      "last_pymnt_d": "2018-09-01"
+        "loan_id": 123456,
+        "loan_status": "Current"
     }
     ```
   * **`new_value`** (снимок после операции):
     ```json
     {
-      "loan_status": "Fully Paid",
-      "out_prncp": 0.00,
-      "last_pymnt_d": "2018-10-01"
+        "loan_id": 123456,
+        "loan_status": "Fully Paid"
     }
     ```
