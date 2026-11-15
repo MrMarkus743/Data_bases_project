@@ -197,7 +197,7 @@ UNIQUE-ограничения на `loan_id` в `credit_profiles`, `loan_financi
 | `loan_id` | `bigint` | FK - `loans.loan_id`, NOT NULL, UNIQUE | Открытые |
 | `co_client_id` | `bigint` | FK - `clients.client_id`, NOT NULL | Открытые |
 | `annual_inc_joint` | `numeric(14,2)` | CHECK ≥ 0 | ПДн (152-ФЗ) |
-| `dti_joint` | `numeric(6,2)` | CHECK ≥ 0, NOT NULL | Коммерческая тайна |
+| `dti_joint` | `numeric(6,2)` | CHECK ≥ 0 или NULL | Коммерческая тайна |
 | `verification_status_joint` | `varchar(20)` | — | Коммерческая тайна |
 | `revol_bal_joint` | `numeric(14,2)` | CHECK ≥ 0 | Коммерческая тайна |
 | `sec_app_fico_range_low` | `smallint` | — | Коммерческая тайна |
